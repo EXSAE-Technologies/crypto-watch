@@ -1,16 +1,25 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme as NavDefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { CryptoUpdate, MarginPrice } from './components/cryptoUpdate';
+import { CryptoUpdate, Detail, MarginPrice } from './components/cryptoUpdate';
 import * as React from 'react';
 import { AppContext } from './components/utils';
-import { IconButton } from 'react-native-paper';
+import { DefaultTheme, DarkTheme, IconButton, Provider } from 'react-native-paper';
 
 const Stack = createNativeStackNavigator();
+const theme = {
+  ...DefaultTheme,
+  ...NavDefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    ...NavDefaultTheme.colors,
+    primary:'#005694',
+  }
+}
 
 export default function App() {
-  const ws = new WebSocket('wss://ws.coincap.io/prices?assets=bitcoin');
-  ws.onopen
+  const [ws,setWs] = React.useState(new WebSocket('wss://ws.coincap.io/prices?assets=bitcoin'));
   return (
+    <Provider theme={theme}>
     <AppContext.Provider value={{
       socket: ws,
       message: (callBack:any)=>{
@@ -22,14 +31,21 @@ export default function App() {
         ws.onopen = (e:any)=>{
           callBack(e);
         }
+      },
+      reconnect: ()=>{
+        setWs(new WebSocket('wss://ws.coincap.io/prices?assets=bitcoin'));
       }
     }}>
       <NavigationContainer>
-        <Stack.Navigator>
+        <Stack.Navigator screenOptions={{
+          headerRight: () => (<IconButton icon='refresh' onPress={()=>{setWs(new WebSocket('wss://ws.coincap.io/prices?assets=bitcoin'))}} />)
+        }}>
           <Stack.Screen name='Crypto' component={CryptoUpdate} />
           <Stack.Screen name='MarginPrice' component={MarginPrice} />
+          <Stack.Screen name='Detail' component={Detail} />
         </Stack.Navigator>
       </NavigationContainer>
     </AppContext.Provider>
+    </Provider>
   );
 }
