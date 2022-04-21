@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View, Text, ScrollView, RefreshControl } from 'react-native';
-import { Button, Card, DataTable, Divider, Modal, Portal, TextInput } from 'react-native-paper';
+import { Button, Card, DataTable, Divider, Modal, Portal, RadioButton, TextInput } from 'react-native-paper';
 import { AppContext, getData, storeData } from './utils';
 
 export function CryptoUpdate(props:any){
@@ -60,6 +60,7 @@ export function CryptoUpdate(props:any){
             <DataTable>
                 <DataTable.Header>
                     <DataTable.Title>Currency</DataTable.Title>
+                    <DataTable.Title numeric>Action</DataTable.Title>
                     <DataTable.Title numeric>Margin($)</DataTable.Title>
                     <DataTable.Title numeric>Change($)</DataTable.Title>
                     <DataTable.Title numeric>Rate(%)</DataTable.Title>
@@ -68,6 +69,7 @@ export function CryptoUpdate(props:any){
                     margin.bitcoin.map((mar:any,i)=>(
                         <DataTable.Row key={i} onPress={()=>{detailView(mar,'bitcoin')}}>
                             <DataTable.Cell>Bitcoin</DataTable.Cell>
+                            <DataTable.Cell numeric>{mar.action}</DataTable.Cell>
                             <DataTable.Cell numeric>{mar.price}</DataTable.Cell>
                             <DataTable.Cell numeric>{(prices.bitcoin - mar.price).toFixed(2)}</DataTable.Cell>
                             <DataTable.Cell numeric>{((prices.bitcoin - mar.price)*100/mar.price).toFixed(2)}</DataTable.Cell>
@@ -86,7 +88,8 @@ export function MarginPrice(props:any){
     const [marginPrice,setMarginPrice] = React.useState(initMarginPrice);
     const [newPrice,setNewPrice] = React.useState({
         price:'',
-        amount:''
+        amount:'',
+        action:'bought',
     });
     const [loading,setLoading] = React.useState(true);
     const [loadMargin,setLoadMargin] = React.useState(true);
@@ -123,7 +126,8 @@ export function MarginPrice(props:any){
         setMarginPrice(mar);
         setNewPrice({
             price:'',
-            amount:''
+            amount:'',
+            action:'bought',
         });
         setReload(true);
     }
@@ -166,6 +170,38 @@ export function MarginPrice(props:any){
                                     m.bitcoin[i] = p;
                                     setMarginPrice(m);
                                 }} value={price.amount} keyboardType='numeric' label={'Margin Amount'} />
+                                <DataTable>
+                                    <DataTable.Row>
+                                        <DataTable.Cell>Bought</DataTable.Cell>
+                                        <DataTable.Cell numeric>
+                                            <RadioButton 
+                                                value='bought'
+                                                status={price.action === 'bought'?'checked':'unchecked'}
+                                                onPress={()=>{
+                                                    let p = price;
+                                                    p.action = 'bought';
+                                                    let m = marginPrice;
+                                                    m.bitcoin[i] = p;
+                                                    setMarginPrice(m);
+                                                }}/>
+                                        </DataTable.Cell>
+                                    </DataTable.Row>
+                                    <DataTable.Row>
+                                        <DataTable.Cell>Sold</DataTable.Cell>
+                                        <DataTable.Cell numeric>
+                                            <RadioButton 
+                                                value='sold'
+                                                status={price.action === 'sold'?'checked':'unchecked'}
+                                                onPress={()=>{
+                                                    let p = price;
+                                                    p.action = 'sold';
+                                                    let m = marginPrice;
+                                                    m.bitcoin[i] = p;
+                                                    setMarginPrice(m);
+                                                }}/>
+                                        </DataTable.Cell>
+                                    </DataTable.Row>
+                                </DataTable>
                             </Card.Content>
                             <Card.Actions>
                                 <Button onPress={()=>{deleteMargin(i)}}>Delete</Button>
@@ -180,7 +216,8 @@ export function MarginPrice(props:any){
                     }} onChangeText={(value:string)=>{
                         setNewPrice({
                             price:value,
-                            amount:newPrice.amount
+                            amount:newPrice.amount,
+                            action:newPrice.action,
                         });
                     }} value={newPrice.price} keyboardType='numeric' label={'New Margin Price'} />
                 <TextInput mode='outlined' style={{
@@ -188,9 +225,43 @@ export function MarginPrice(props:any){
                     }} onChangeText={(value:string)=>{
                         setNewPrice({
                             price:newPrice.price,
-                            amount:value
+                            amount:value,
+                            action:newPrice.action,
                         });
                     }} value={newPrice.amount} keyboardType='numeric' label={'New Margin Amount'} />
+                <DataTable>
+                    <DataTable.Row>
+                        <DataTable.Cell>Bought</DataTable.Cell>
+                        <DataTable.Cell numeric>
+                            <RadioButton 
+                                value='bought'
+                                status={newPrice.action === 'bought'?'checked':'unchecked'}
+                                onPress={()=>{
+                                    setNewPrice({
+                                        price:newPrice.price,
+                                        amount:newPrice.amount,
+                                        action:'bought',
+                                    });
+                                }}/>
+                        </DataTable.Cell>
+                    </DataTable.Row>
+                    <DataTable.Row>
+                        <DataTable.Cell>Sold</DataTable.Cell>
+                        <DataTable.Cell numeric>
+                            <RadioButton 
+                            value='sold'
+                            status={newPrice.action === 'sold'?'checked':'unchecked'}
+                            onPress={()=>{
+                                setNewPrice({
+                                    price:newPrice.price,
+                                    amount:newPrice.amount,
+                                    action:'sold',
+                                });
+                            }}/>
+                        </DataTable.Cell>
+                    </DataTable.Row>
+                </DataTable>
+                
                 <Button icon={'plus'} onPress={()=>{addMargin()}}>Add</Button>
 
                 <Button style={{
@@ -237,6 +308,10 @@ export function Detail(props:any){
                         <DataTable.Cell numeric>{marginPrice.amount}</DataTable.Cell>
                     </DataTable.Row>
                     <DataTable.Row>
+                        <DataTable.Title>Margin Amount Action</DataTable.Title>
+                        <DataTable.Cell numeric>{marginPrice.action}</DataTable.Cell>
+                    </DataTable.Row>
+                    <DataTable.Row>
                         <DataTable.Title>Change ($)</DataTable.Title>
                         <DataTable.Cell numeric>{(prices[currency] - marginPrice.price).toFixed(2)}</DataTable.Cell>
                     </DataTable.Row>
@@ -247,6 +322,15 @@ export function Detail(props:any){
                     <DataTable.Row onPress={()=>{setModalOpen(true)}}>
                         <DataTable.Title>Profit/Loss</DataTable.Title>
                         <DataTable.Cell numeric>{(((prices[currency] - marginPrice.price)/marginPrice.price)*marginPrice.amount).toFixed(2)}</DataTable.Cell>
+                    </DataTable.Row>
+                    <DataTable.Row style={{
+                        backgroundColor: (marginPrice.action === 'bought')?((prices[currency] - marginPrice.price)>0)?'#80ff80':'#ff8080':
+                        (marginPrice.action === 'sold')?((prices[currency] - marginPrice.price)>0)?'#ff8080':'#80ff80':'#8080ff'
+                    }}>
+                        <DataTable.Title>Resort</DataTable.Title>
+                        <DataTable.Cell numeric>{marginPrice.action === 'bought'?'Sell':(
+                            marginPrice.action === 'sold'?'buy':'unknown'
+                        )}</DataTable.Cell>
                     </DataTable.Row>
                 </DataTable>
             </ScrollView>

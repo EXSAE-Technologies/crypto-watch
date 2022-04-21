@@ -3,12 +3,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { CryptoUpdate, Detail, MarginPrice } from './components/cryptoUpdate';
 import * as React from 'react';
 import { AppContext } from './components/utils';
-import { DefaultTheme, DarkTheme, IconButton, Provider } from 'react-native-paper';
+import { DefaultTheme, IconButton, Provider } from 'react-native-paper';
 
 const Stack = createNativeStackNavigator();
 const theme = {
   ...DefaultTheme,
   ...NavDefaultTheme,
+  roundness:8,
   colors: {
     ...DefaultTheme.colors,
     ...NavDefaultTheme.colors,
